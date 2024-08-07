@@ -1,4 +1,9 @@
 import "@stdlib/deploy";
+import "./jetton_fire_master";
+import "./jetton_fire_wallet";
+import "./nft_item.tact";
+import "./nft_collection.tact";
+import "./messages";
 
 message Add {
     queryId: Int as uint64;
@@ -6,26 +11,56 @@ message Add {
 }
 
 contract Lottery with Deployable {
-    id: Int as uint32;
-    counter: Int as uint32;
+    const twoMatch: Int = ton("10");
+    const threeMatch: Int = ton("15");
+    const priceForToken: Int = ton("1");
 
-    init(id: Int) {
-        self.id = id;
-        self.counter = 0;
+    nftCollection: Address;
+    paymentToken: Address;
+
+    init() {
+        self.nftCollection = myAddress();
+        self.paymentToken = myAddress();
     }
 
-    receive(msg: Add) {
-        self.counter += msg.amount;
-
-        // Notify the caller that the receiver was executed and forward remaining value back
-        self.notify("Cashback".asComment());
+    receive(msg: SetData) {
+        self.nftCollection = msg.nftAddress;
+        self.paymentToken = msg.jettonAddress;
     }
 
-    get fun counter(): Int {
-        return self.counter;
+    receive(msg: BuyToken) {
+        require(context().value >= self.priceForToken, "Only 1 TON payments are accepted");
+        send(SendParameters{
+            to: self.paymentToken,
+            body: MintToken{amount: ton("100"), to: sender()}.toCell(),
+            value: ton("0.5"),
+            mode: SendIgnoreErrors
+        });
     }
 
-    get fun id(): Int {
-        return self.id;
+    receive(msg: BuyTicket) {
+        dump(sender());
+        dump(myAddress());
+        dump(msg.amount);
+        let init: StateInit = initOf JettonFireWallet(self.paymentToken, sender());
+        dump(contractAddress(init));
+        send(SendParameters{
+            to: contractAddress(init),
+            body: Transfer{amount: msg.amount, to: myAddress()}.toCell(),
+            value: 0,
+            mode: SendRemainingValue
+        });
+    }
+
+    get fun balance(): Int {
+        return myBalance();
+    }
+
+    get fun paymentToken(): Address {
+        return self.paymentToken;
+    }
+
+    get fun nftCollection(): Address {
+        return self.nftCollection;
     }
 }
