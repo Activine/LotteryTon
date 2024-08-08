@@ -22,7 +22,7 @@ contract NftItem with Deployable {
     index: Int as uint256;
     content: Cell;
     operator: Address;
-    lotteryChecked: Bool = false;
+    ticketStatus: Bool = false;
     numbers: Numbers = Numbers{one: 0, two: 0, three: 0};
 
 
@@ -65,16 +65,24 @@ contract NftItem with Deployable {
         });
     }
 
+    receive("ticketStatus") {
+        dump(self.ticketStatus);
+        self.reply(GetTicketStatus{status: self.ticketStatus, index: self.index}.toCell());
+    }
+
     receive(msg: SetLotteryData) {
         // require(sender() == self.operator, "Operator only");
-        dump(sender());
-        dump(myAddress());
-        dump(msg.one);
-        dump(msg.two);
-        dump(msg.three);
+        if(!self.ticketStatus) {
+            dump(sender());
+            dump(myAddress());
+            dump(msg.one);
+            dump(msg.two);
+            dump(msg.three);
 
-        self.lotteryChecked = true;
-        self.numbers = Numbers{one: msg.one, two: msg.two, three: msg.three};
+            self.ticketStatus = true;
+            self.numbers = Numbers{one: msg.one, two: msg.two, three: msg.three};
+        }
+
     }
 
     get fun get_nft_data(): NftData {
@@ -86,6 +94,6 @@ contract NftItem with Deployable {
     }
 
     get fun get_lottery_check(): Bool {
-        return self.lotteryChecked;
+        return self.ticketStatus;
     }
 }

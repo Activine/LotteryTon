@@ -54,3 +54,8 @@ message SetLotteryData{
     two: Int as uint8;
     three: Int as uint8;
 }
+
+message GetTicketStatus {
+    status: Bool;
+    index: Int as uint256;
+}

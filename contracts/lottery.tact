@@ -71,24 +71,50 @@ contract Lottery with Deployable {
     }
 
     receive(msg: CheckTicket) {
-        let data: RoundData = self.threeRandom();
         let initNFT: StateInit = initOf NftItem(msg.index);
-        dump(msg.index);
+
+        // dump(data.first);
+        // dump(data.second);
+        // dump(data.third);
+        // dump(data.match);
+
         send(SendParameters{
             to: contractAddress(initNFT),
-            body: SetLotteryData{one: data.first, two: data.second, three: data.third}.toCell(),
+            body: "ticketStatus".asComment(),
             value: ton("0.2"),
             mode: SendIgnoreErrors
         });
-        dump(data.match);
-        dump(data.match);
-        dump(data.match);
-        dump(data.match);
-        dump(data.match);
-        dump(data.match);
-        dump(data.match);
-        dump(data.match);
-        self.setReward(data.match, sender());
+
+        // dump(msg.index);
+        // dump(self.requestStatus);
+        // send(SendParameters{
+        //     to: contractAddress(initNFT),
+        //     body: SetLotteryData{one: data.first, two: data.second, three: data.third}.toCell(),
+        //     value: ton("0.2"),
+        //     mode: SendIgnoreErrors
+        // });
+
+        // self.setReward(data.match, sender());
+    }
+
+    receive(msg: GetTicketStatus) {
+        dump(msg.status);
+        if(!msg.status) {
+            let data: RoundData = self.threeRandom();
+            let initNFT: StateInit = initOf NftItem(msg.index);
+
+            send(SendParameters{
+                to: contractAddress(initNFT),
+                body: SetLotteryData{one: data.first, two: data.second, three: data.third}.toCell(),
+                value: ton("0.2"),
+                mode: SendIgnoreErrors
+            });
+            
+            if(data.match != 0) {    
+                self.setReward(data.match, sender());
+            }
+        }
+        // require(msg.status, "ticket used");
     }
 
     fun setReward(match: Int, winner: Address) {

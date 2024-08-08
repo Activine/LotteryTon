@@ -260,8 +260,23 @@ describe('Lottery', () => {
                 index: 0n,
             },
         );
-        console.log(tx2.events);
+        console.log(txCheck.events);
         console.log('getGetLotteryCheck', await nft0.getGetNumbers());
+
+        bobData = await bobWallet.getGetWalletData();
+        console.log('bobData.balance after', bobData.balance);
+        lotteryData = await lotteryWallet.getGetWalletData();
+        console.log('lotteryData.balance after', lotteryData.balance);
+
+        let txCheck2 = await lottery.send(
+            bob.getSender(),
+            { value: toNano('2') },
+            {
+                $$type: 'CheckTicket',
+                index: 0n,
+            },
+        );
+        console.log(txCheck2.events);
 
         bobData = await bobWallet.getGetWalletData();
         console.log('bobData.balance after', bobData.balance);
