@@ -12,6 +12,7 @@ message NftDeploy {
     index: Int as uint256;
     owner: Address;
     operator: Address;
+    collection: Address;
     content: Cell;
 }
 
@@ -43,4 +44,13 @@ message BuyToken {
 message BuyTicket {
     amount: Int as coins;
     target: Int as uint32;
+}
+message CheckTicket {
+    index: Int as uint256;
+}
+
+message SetLotteryData{
+    one: Int as uint8;
+    two: Int as uint8;
+    three: Int as uint8;
 }

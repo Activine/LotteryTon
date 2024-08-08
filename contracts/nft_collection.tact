@@ -1,5 +1,4 @@
 import "@stdlib/deploy";
-import "@stdlib/ownable";
 import "./nft_item.tact";
 import "./messages.tact";
 
@@ -9,24 +8,27 @@ struct CollectionData {
     owner: Address;
 }
 
-contract NftCollection with Deployable, Ownable {
+contract NftCollection with Deployable {
     const minTonForStorage: Int = ton("0.03");
     const gasConsumption: Int = ton("0.03");
 
-    owner: Address;
     next_item_index: Int as uint32 = 0;
     content: Cell;
+    operator: Address;
+    owner: Address;
 
-    init(owner: Address, content: Cell) {
-        self.owner = owner;
+    init(operator: Address, content: Cell, owner: Address) {
+        self.operator = operator;
         self.content = content;    
+        self.owner = owner;
+        dump(self.next_item_index);
     }
 
     receive(msg: RequestNftDeploy){
-        self.requireOwner();
         let index = self.next_item_index;
-        require(index >= 0, "non-sequential NFTs");
-        let nft_init: StateInit = initOf NftItem(myAddress(), index);
+        dump(index);
+        // require(index >= 0, "non-sequential NFTs");
+        let nft_init: StateInit = initOf NftItem(index);
         let nft_address: Address = contractAddress(nft_init);
         let msgValue: Int = context().value;
         let tonBalanceBeforeMsg: Int = myBalance() - msgValue;
@@ -35,7 +37,7 @@ contract NftCollection with Deployable, Ownable {
 
         send(SendParameters{
             to: nft_address,
-            value: msgValue,
+            value: ton("0.2"),
             mode: SendIgnoreErrors,
             bounce: false,
             code: nft_init.code,
@@ -44,6 +46,7 @@ contract NftCollection with Deployable, Ownable {
                 index: index,
                 owner: msg.owner,
                 operator: msg.operator,
+                collection: myAddress(),
                 content: self.content,
             }.toCell()
         });
@@ -56,10 +59,14 @@ contract NftCollection with Deployable, Ownable {
     }
     
     get fun get_nft_address_by_index(index: Int): Address {
-        return contractAddress(initOf NftItem(myAddress(), index));
+        return contractAddress(initOf NftItem(index));
     }
 
     get fun get_nft_content(index: Int, individual_content: Cell): Cell {
         return individual_content;
+    }
+
+    get fun getItemIndex(): Int {
+        return self.next_item_index;
     }
 }

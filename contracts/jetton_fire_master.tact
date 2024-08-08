@@ -10,10 +10,12 @@ struct Metadata {
 contract JettonFireMaster with Deployable {
     symbol: String; 
     totalSupply: Int as coins;
+    operator: Address;
     
-    init() {
+    init(operator: Address) {
         self.symbol = "4ire";
         self.totalSupply = ton("500");
+        self.operator = operator;
         self.mint(self.totalSupply, sender());
     }
 
@@ -22,7 +24,7 @@ contract JettonFireMaster with Deployable {
     }
 
     fun mint(amount: Int, to: Address) {
-        let init: StateInit = initOf JettonFireWallet(myAddress(), to);
+        let init: StateInit = initOf JettonFireWallet(myAddress(), to, self.operator);
         // dump(to);
         // dump(amount);
         send(SendParameters{
@@ -37,7 +39,7 @@ contract JettonFireMaster with Deployable {
     }
  
     get fun walletAddress(owner: Address): Address {
-        let init: StateInit = initOf JettonFireWallet(myAddress(), owner);
+        let init: StateInit = initOf JettonFireWallet(myAddress(), owner, self.operator);
         return contractAddress(init);
     }
 

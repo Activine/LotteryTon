@@ -10,11 +10,13 @@ struct JettonFireData {
 contract JettonFireWallet with Deployable {
     parent: Address;
     owner: Address;
+    operator: Address;
     balance: Int as coins;
 
-    init(parent: Address, owner: Address) {
+    init(parent: Address, owner: Address, operator: Address) {
         self.parent = parent;
         self.owner = owner;
+        self.operator = operator;
         self.balance = 0;
     }   
 
@@ -22,7 +24,7 @@ contract JettonFireWallet with Deployable {
         if(msg.origin == self.parent) {
             require(sender() == self.parent, "Parent only");
         } else {
-            let init: StateInit = initOf JettonFireWallet(self.parent, msg.origin);
+            let init: StateInit = initOf JettonFireWallet(self.parent, msg.origin, self.operator);
             require(sender() == contractAddress(init), "Wallet only");
         }
         self.balance = self.balance + msg.amount;
@@ -30,12 +32,15 @@ contract JettonFireWallet with Deployable {
     }
 
     receive(msg: Transfer) {
-        dump(sender());
         dump(self.owner);
-        require(sender() == self.owner, "Only owner");
+        dump(sender());
+        let ctx: Context = context();
+        dump(ctx.sender);
+        dump(self.operator);
+        require(sender() == self.owner|| sender() == self.operator, "Only owner");
         require(self.balance >= msg.amount, "Insufficient balance");
         self.balance = self.balance - msg.amount;
-        let init: StateInit = initOf JettonFireWallet(self.parent, msg.to);
+        let init: StateInit = initOf JettonFireWallet(self.parent, msg.to, self.operator);
         send(SendParameters{
             to: contractAddress(init),
             body: InternalAdd{amount: msg.amount, origin: self.owner}.toCell(),
@@ -51,7 +56,7 @@ contract JettonFireWallet with Deployable {
         return JettonFireData{
             balance: self.balance,
             owner: self.owner,
-            walletCode: (initOf JettonFireWallet(self.parent, self.owner)).code
+            walletCode: (initOf JettonFireWallet(self.parent, self.owner, self.operator)).code
         };
     }
 }
